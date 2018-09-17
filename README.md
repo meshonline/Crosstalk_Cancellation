@@ -1,7 +1,7 @@
 # Crosstalk_Cancellation
 C++ class of crosstalk cancellation
 
-This is a port version of [https://github.com/Curly-Mo/crosstalk_cancellation](https://github.com/Curly-Mo/crosstalk_cancellation), I re-implemented it with C++, header only, just include the header to use.
+This is a port version of [https://github.com/Curly-Mo/crosstalk_cancellation](https://github.com/Curly-Mo/crosstalk_cancellation), I re-implemented it with C++, header only.
 
 ### How to use
 There are only five methods in the class:<br/>
@@ -16,7 +16,7 @@ double signal = (raw_signal / 65536.0) - 0.5;<br/>
 After called process_stereo_channel, convert the audio data back to unsigned short:<br/>
 unsigned short raw_signal = (signal + 0.5) * 65536.0;<br/>
 <br/>
-Note: The length of the output vector may not be equal to the length of the input vector.
+Note: The length of the output vector may not equals the length of the input vector.
 
 ### License
 The MIT License (MIT)
