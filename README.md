@@ -18,7 +18,7 @@ double new_signal = (raw_signal / 65536.0) - 0.5;<br/>
 After called process_stereo_channel method, convert the audio samples back to unsigned short:<br/>
 unsigned short raw_signal = (new_signal + 0.5) * 65536.0;<br/>
 <br/>
-Note: process_stereo_channel method always returns the result of the previous input vector, not that of the current input vector, so the length of the output vector may not equals the length of the input vector.
+Note: process_stereo_channel method always returns the result of the previous input vector, not that of the current input vector, so the length of the output vector may not equal to the length of the input vector.
 
 ### License
 The MIT License (MIT)
