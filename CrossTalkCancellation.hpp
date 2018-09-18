@@ -9,7 +9,6 @@
 #define CrossTalkCancellation_hpp
 
 #include <vector>
-#include <queue>
 
 class CrossTalkCancellation {
 public:
@@ -20,14 +19,19 @@ public:
         ear_to_ear = 0.215;
         headshadow_filter_coefficients(compute_geometry(), ear_to_ear/2.0);
 
-        // put some silent signal into the queue
-        std::vector<double> silent_signal(1024, 0.0);
-        left_queue.push(silent_signal);
-        left_queue.push(silent_signal);
-        left_queue.push(silent_signal);
-        right_queue.push(silent_signal);
-        right_queue.push(silent_signal);
-        right_queue.push(silent_signal);
+        // initial left queue
+        left_queue.resize(4);
+        left_queue[0].resize(512, 0.0);
+        left_queue[1].resize(512, 0.0);
+        left_queue[2].resize(512, 0.0);
+        left_queue[3].resize(512, 0.0);
+
+        // initial right queue
+        right_queue.resize(4);
+        right_queue[0].resize(512, 0.0);
+        right_queue[1].resize(512, 0.0);
+        right_queue[2].resize(512, 0.0);
+        right_queue[3].resize(512, 0.0);
     }
     
     void change_sample_rate(const int _sr) {
@@ -52,27 +56,33 @@ public:
     
     void process_stereo_channel(std::vector<double>& left,
                                 std::vector<double>& right) {
-        // store the middle data for later use, otherwise, we cannot get the data after push action.
-        std::vector<double> left_middle_piece = left_queue.back();
-        std::vector<double> right_middle_piece = right_queue.back();
+        // move old data pieces forward
+        left_queue[0] = left_queue[1];
+        left_queue[1] = left_queue[2];
+        left_queue[2] = left_queue[3];
+        // queue new data piece
+        left_queue[3] = left;
 
-        // push the new data piece and pop the old data piece
-        left_queue.push(left);
-        left_queue.pop();
-        right_queue.push(right);
-        right_queue.pop();
+        // move old data pieces forward
+        right_queue[0] = right_queue[1];
+        right_queue[1] = right_queue[2];
+        right_queue[2] = right_queue[3];
+        // queue new data piece
+        right_queue[3] = right;
 
-        // concate three data piece to one big data piece
+        // concatenate data pieces to one big data piece
         std::vector<double> work_left;
-        work_left.insert(work_left.end(), left_queue.front().begin(), left_queue.front().end());
-        work_left.insert(work_left.end(), left_middle_piece.begin(), left_middle_piece.end());
-        work_left.insert(work_left.end(), left_queue.back().begin(), left_queue.back().end());
+        work_left.insert(work_left.end(), left_queue[0].begin(), left_queue[0].end());
+        work_left.insert(work_left.end(), left_queue[1].begin(), left_queue[1].end());
+        work_left.insert(work_left.end(), left_queue[2].begin(), left_queue[2].end());
+        work_left.insert(work_left.end(), left_queue[3].begin(), left_queue[3].end());
 
         std::vector<double> work_right;
-        work_right.insert(work_right.end(), right_queue.front().begin(), right_queue.front().end());
-        work_right.insert(work_right.end(), right_middle_piece.begin(), right_middle_piece.end());
-        work_right.insert(work_right.end(), right_queue.back().begin(), right_queue.back().end());
-        
+        work_right.insert(work_right.end(), right_queue[0].begin(), right_queue[0].end());
+        work_right.insert(work_right.end(), right_queue[1].begin(), right_queue[1].end());
+        work_right.insert(work_right.end(), right_queue[2].begin(), right_queue[2].end());
+        work_right.insert(work_right.end(), right_queue[3].begin(), right_queue[3].end());
+
         // calculate crosstalk cancellation for left channel
         std::vector<double> l_left, l_right;
         l_left.resize(work_left.size(), 0.0);
@@ -93,11 +103,15 @@ public:
         add_to_signal(work_right, r_right);
         add_to_signal(work_right, l_right);
         
-        // store the middle data piece as the result
-        left.resize(left_middle_piece.size());
-        memcpy(left.data(), work_left.data() + left_queue.front().size(), left_middle_piece.size() * sizeof(double));
-        right.resize(right_middle_piece.size());
-        memcpy(right.data(), work_right.data() + right_queue.front().size(), right_middle_piece.size() * sizeof(double));
+        // store the third data piece as the result
+        left.resize(left_queue[2].size());
+        memcpy(left.data(),
+               work_left.data() + left_queue[0].size() + left_queue[1].size(),
+               left_queue[2].size() * sizeof(double));
+        right.resize(right_queue[2].size());
+        memcpy(right.data(),
+               work_right.data() + right_queue[0].size() + right_queue[1].size(),
+               right_queue[2].size() * sizeof(double));
     }
 private:
     /******************************************************************************
@@ -237,10 +251,6 @@ private:
             ping_pong = !ping_pong;
 
             loop_count++;
-            // too many loop count
-            if (loop_count > 100) {
-                break;
-            }
         } while (db >= threshold_db);
     }
     
@@ -298,8 +308,8 @@ private:
     double lstnr_to_spkr;
     double ear_to_ear;
     int sr;
-    std::queue< std::vector<double> > left_queue;
-    std::queue< std::vector<double> > right_queue;
+    std::vector< std::vector<double> > left_queue;
+    std::vector< std::vector<double> > right_queue;
 };
 
 #endif /* CrossTalkCancellation_hpp */
