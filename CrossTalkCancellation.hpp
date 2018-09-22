@@ -19,14 +19,14 @@ public:
         ear_to_ear = 0.215;
         headshadow_filter_coefficients(compute_geometry(), ear_to_ear/2.0);
 
-        // initial left queue
+        // init left queue
         left_queue.resize(4);
         left_queue[0].resize(512, 0.0);
         left_queue[1].resize(512, 0.0);
         left_queue[2].resize(512, 0.0);
         left_queue[3].resize(512, 0.0);
 
-        // initial right queue
+        // init right queue
         right_queue.resize(4);
         right_queue[0].resize(512, 0.0);
         right_queue[1].resize(512, 0.0);
@@ -162,7 +162,7 @@ private:
      *****************************************************************************/
     inline void fractional_delay(std::vector<double>& signal,
                           double time) {
-        std::vector<double> temp_signal = signal;
+        std::vector<double> temp_signal(signal.size());
         double m = time * sr;
         int m_int = floor(m);
         double m_frac = m - m_int;
@@ -213,8 +213,7 @@ private:
     
     /******************************************************************************
      To speed up calculation and optimize memory, I use loop instead of recursive,
-     accumulate crosstalk cancellation to each side, and limit the loop count to
-     avoid very large loop count caused by small attenuation value in some cases.
+     accumulate crosstalk cancellation to each channel in turn.
      *****************************************************************************/
     void recursive_cancel(const std::vector<double>& signal,
                           std::vector<double>& ipsilateral,
@@ -226,7 +225,6 @@ private:
         std::vector<double> temp_signal = signal;
         bool ping_pong = false;
         double db;
-        int loop_count = 0;
         do {
             // time delay by linear interpolation
             fractional_delay(temp_signal, time);
@@ -249,8 +247,6 @@ private:
 
             // flip left and right
             ping_pong = !ping_pong;
-
-            loop_count++;
         } while (db >= threshold_db);
     }
     
