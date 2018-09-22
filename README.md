@@ -12,7 +12,7 @@ void change_listener_to_speaker(const double _lstnr_to_spkr);<br/>
 void change_ear_to_ear(const double _ear_to_ear);<br/>
 void process_stereo_channel(std::vector<double>& left, std::vector<double>& right);<br/>
 <br/>
-Note: process_stereo_channel method always returns the result of the previous of the previous input, not that of the current input, the output length may not equal to the input length, always check the output length.<br/>
+Note: process_stereo_channel method always returns the result of the previous input, not that of the current input, the output length may not equal to the input length, always check the output length.<br/>
 <br/>
 If the raw audio sample format is unsigned short, please convert the audio samples to double:<br/>
 double new_signal = (raw_signal / 65536.0) - 0.5;<br/>
